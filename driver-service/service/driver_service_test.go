@@ -18,7 +18,7 @@ func TestRegisterDriver_Success(t *testing.T) {
 	if driver.ConnectionStatus != domain.ConnectionOnline {
 		t.Errorf("expected ONLINE, got %s", driver.ConnectionStatus)
 	}
-	if driver.AvailabilityStatus != domain.AvailabilityOnTrip {
+	if driver.AvailabilityStatus != domain.AvailabilityAvailable {
 		t.Errorf("expected AVAILABLE, got %s", driver.AvailabilityStatus)
 	}
 }
@@ -129,7 +129,7 @@ func TestFullLifecycle(t *testing.T) {
 	}
 
 	// Driver should be back to AVAILABLE
-	if svc.drivers["d1"].AvailabilityStatus != domain.AvailabilityOnTrip {
+	if svc.drivers["d1"].AvailabilityStatus != domain.AvailabilityAvailable {
 		t.Error("expected driver back to AVAILABLE after full lifecycle")
 	}
 }

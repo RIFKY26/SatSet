@@ -1,0 +1,14 @@
+go 1.25.0
+
+use (
+	./auth_service
+	./driver-service
+	./location-service
+	./matching-service
+	./notification
+	./order-service
+	./payment-service
+	./promo_service
+	./rating
+	./user_service
+)

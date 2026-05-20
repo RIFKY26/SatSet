@@ -1,0 +1,18 @@
+# Tahap 1: Menggunakan base image Golang versi terbaru
+FROM golang:1.21-alpine
+
+# Set direktori kerja di dalam kontainer
+WORKDIR /app
+
+# Salin file modul dan download dependensi (termasuk Gomock)
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Salin seluruh kode sumber ke dalam kontainer
+COPY . .
+
+# Build aplikasi menjadi binary bernama 'main'
+RUN go build -o main ./cmd/main.go
+
+# Jalankan aplikasi saat kontainer dimulai
+CMD ["./main"]

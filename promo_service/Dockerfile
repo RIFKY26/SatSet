@@ -9,7 +9,8 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o promo-service ./main.go
+# Sesuaikan lokasi main.go (apakah ./main.go atau ./cmd/main.go)
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o promo-service ./cmd/main.go
 
 FROM alpine:latest
 
@@ -19,6 +20,7 @@ WORKDIR /root/
 
 COPY --from=builder /app/promo-service .
 
-EXPOSE 8080
+# UBAH PORT KE JATAH PROMO SERVICE
+EXPOSE 8086
 
 CMD ["./promo-service"]

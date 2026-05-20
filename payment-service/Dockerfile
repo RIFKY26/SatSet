@@ -1,18 +1,18 @@
-
 FROM golang:1.21-alpine AS builder
 
 RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY go.mod ./
-
+# Copy file module agar bisa download dependency
+COPY go.mod go.sum ./
 RUN go mod download
 
-COPY internal/ ./internal/
-COPY main.go ./
+# Copy SELURUH kode sumber kamu ke dalam Docker
+COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o payment-service main.go
+# Build aplikasinya (Perhatikan: kita tunjuk cmd/main.go)
+RUN CGO_ENABLED=0 GOOS=linux go build -o payment-service ./cmd/main.go
 
 FROM alpine:latest
 
@@ -22,6 +22,7 @@ WORKDIR /root/
 
 COPY --from=builder /app/payment-service .
 
-EXPOSE 8080
+# Sesuai dengan absen port Payment Service milikmu
+EXPOSE 8089
 
 CMD ["./payment-service"]

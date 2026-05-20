@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: driver-service-deployment
+  labels:
+    app: driver-service
+spec:
+  replicas: 2 # Kita suruh Kubernetes menjalankan 2 copy aplikasi biar aman
+  selector:
+    matchLabels:
+      app: driver-service
+  template:
+    metadata:
+      labels:
+        app: driver-service
+    spec:
+      containers:
+      - name: driver-service
+        # Nanti akun dockerhub disesuaikan dengan akunmu
+        image: akun-dockerhub-kamu/satset-driver:latest 
+        ports:
+        - containerPort: 8080 # Ini port asli dari main.go user_service
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: driver-service # Nama ini yang akan dipanggil oleh pintu masuk (Ingress)
+spec: 
+  selector:
+    app: driver-service
+  ports:
+    - protocol: TCP
+      port: 80         # Port internal Kubernetes
+      targetPort: 8080 # Diarahkan ke port aplikasi Go-mu

@@ -5,6 +5,7 @@ import (
 	"auth_service/repository"
 	"auth_service/service"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -14,6 +15,13 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 
 	http.HandleFunc("/login", authHandler.Login)
+
+	// Tambahan endpoint health
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+
 	fmt.Println("Auth Service berjalan di port 8081...")
-	http.ListenAndServe(":8081", nil)
+	log.Fatal(http.ListenAndServe(":8081", nil))
 }

@@ -17,7 +17,7 @@ spec:
       containers:
       - name: order-service
         # Nanti akun dockerhub disesuaikan dengan akunmu
-        image: akun-dockerhub-kamu/satset-order:latest 
+        image: kingdil/satset-order-service:latest
         ports:
         - containerPort: 8080 # Ini port asli dari main.go user_service
 

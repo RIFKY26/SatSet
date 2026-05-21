@@ -17,9 +17,9 @@ spec:
       containers:
       - name: rating-service
         # Nanti akun dockerhub disesuaikan dengan akunmu
-        image: akun-dockerhub-kamu/satset-rating:latest 
+        image: kingdil/satset-rating:latest 
         ports:
-        - containerPort: 8080 # Ini port asli dari main.go user_service
+        - containerPort: 8087 # Ini port asli dari main.go user_service
 
 ---
 
@@ -33,4 +33,4 @@ spec:
   ports:
     - protocol: TCP
       port: 80         # Port internal Kubernetes
-      targetPort: 8080 # Diarahkan ke port aplikasi Go-mu
+      targetPort: 8087 # Diarahkan ke port aplikasi Go-mu

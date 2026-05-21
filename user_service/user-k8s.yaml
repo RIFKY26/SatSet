@@ -5,7 +5,7 @@ metadata:
   labels:
     app: user-service
 spec:
-  replicas: 2 # Kita suruh Kubernetes menjalankan 2 copy aplikasi biar aman
+  replicas: 2
   selector:
     matchLabels:
       app: user-service
@@ -16,21 +16,20 @@ spec:
     spec:
       containers:
       - name: user-service
-        # Nanti akun dockerhub disesuaikan dengan akunmu
-        image: akun-dockerhub-kamu/satset-user:latest 
+        image: kingdil/satset-user-service:latest
         ports:
-        - containerPort: 8080 # Ini port asli dari main.go user_service
+        - containerPort: 8085
 
 ---
 
 apiVersion: v1
 kind: Service
 metadata:
-  name: user-service # Nama ini yang akan dipanggil oleh pintu masuk (Ingress)
+  name: user-service
 spec:
   selector:
     app: user-service
   ports:
     - protocol: TCP
-      port: 80         # Port internal Kubernetes
-      targetPort: 8080 # Diarahkan ke port aplikasi Go-mu
+      port: 80
+      targetPort: 8085

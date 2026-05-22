@@ -36,7 +36,7 @@ Proyek ini mengadopsi otomatisasi penuh menggunakan Jenkins (metode *Monorepo Pi
 Berikut adalah dokumentasi keberhasilan *build* dan *deployment* dari proyek ini:
 
 ### 1. Keberhasilan CI/CD Pipeline (Jenkins)
-<img width="1879" height="910" alt="image" src="https://github.com/user-attachments/assets/217d9afe-2fa6-4ae9-81d9-aca82e291ba8" />
+<img width="1914" height="824" alt="image" src="https://github.com/user-attachments/assets/cc20cbfd-0ce6-424a-a46f-310446d9eeec" />
 
 ### 2. Ketersediaan Image di Docker Hub
 <img width="1472" height="496" alt="image" src="https://github.com/user-attachments/assets/9722c8f5-3148-4dfe-86f1-9573c33afc06" />

@@ -48,4 +48,5 @@ Berikut adalah dokumentasi keberhasilan *build* dan *deployment* dari proyek ini
 
 ### 4. Uji Coba Port-Forwarding (Test Drive)
 Aplikasi telah diuji coba dengan membuka terowongan ke *user-service* (`kubectl port-forward svc/user-service 8085:80`).
+
 <img width="517" height="306" alt="image" src="https://github.com/user-attachments/assets/63dcaccb-4a33-42f3-ad3f-4eec62591fc8" />

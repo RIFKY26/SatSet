@@ -17,7 +17,7 @@ pipeline {
 
         stage('Persiapan: Login Docker Hub') {
             steps {
-                bat 'docker login -u %DOCKER_CREDS_USR% -p %DOCKER_CREDS_PSW%'
+                sh 'docker login -u %DOCKER_CREDS_USR% -p %DOCKER_CREDS_PSW%'
             }
         }
 
@@ -42,24 +42,24 @@ pipeline {
                             // 2. Unit Tests
                             echo "--> Menjalankan Unit Tests..."
                             // Menggunakan returnStatus: true karena dosen bilang test akan failed
-                            bat returnStatus: true, script: 'go test -v ./...'
+                            sh returnStatus: true, script: 'go test -v ./...'
 
                             // 3. Lint/Vet
                             echo "--> Menjalankan Lint/Vet..."
-                            bat returnStatus: true, script: 'go vet ./...'
+                            sh returnStatus: true, script: 'go vet ./...'
 
                             // 4. Build Image (lokal)
                             echo "--> Merakit Docker Image..."
-                            bat "docker build -t ${imageName} ."
+                            sh "docker build -t ${imageName} ."
 
                             // 5. Functional Tests
                             echo "--> Menjalankan Functional Tests..."
                             // Simulasi pemanggilan functional test
-                            bat returnStatus: true, script: 'go test -v ./... -tags=functional'
+                            sh returnStatus: true, script: 'go test -v ./... -tags=functional'
 
                             // 6. Push image
                             echo "--> Mengunggah ke Docker Hub..."
-                            bat "docker push ${imageName}"
+                            sh "docker push ${imageName}"
                         }
                     }
                 }
@@ -69,7 +69,7 @@ pipeline {
         stage('7. Deploy di kubernetes') {
             steps {
                 echo "Menerapkan konfigurasi Kubernetes..."
-                bat returnStatus: true, script: '''
+                sh returnStatus: true, script: '''
                     kubectl apply -f ./auth_service/auth-k8s.yaml
                     kubectl apply -f ./driver-service/driver-k8s.yaml
                     kubectl apply -f ./location-service/location-k8s.yaml
@@ -87,7 +87,7 @@ pipeline {
             steps {
                 echo "Memverifikasi Pods yang berjalan di Kubernetes..."
                 // Menjalankan get pods langsung di dalam Jenkins sesuai permintaan dosen
-                bat 'kubectl get pods'
+                sh 'kubectl get pods'
             }
         }
     }
@@ -95,7 +95,7 @@ pipeline {
     post {
         always {
             echo "Pipeline SatSet selesai dieksekusi!"
-            bat returnStatus: true, script: 'docker system prune -f'
+            sh returnStatus: true, script: 'docker system prune -f'
         }
     }
 }

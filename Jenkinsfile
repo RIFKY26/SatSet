@@ -17,10 +17,11 @@ pipeline {
 
         stage('Persiapan: Login Docker Hub') {
             steps {
-                sh 'echo "$DOCKER_CREDS_PSW" | docker login -u "$DOCKER_CREDS_USR" --password-stdin'
+                // Hapus metode echo dan langsung gunakan parameter -p
+                sh 'docker login -u "$DOCKER_CREDS_USR" -p "$DOCKER_CREDS_PSW"'
             }
         }
-
+        
         stage('Proses Microservices (Unit Test -> Vet -> Build -> Func Test -> Push)') {
             steps {
                 script {

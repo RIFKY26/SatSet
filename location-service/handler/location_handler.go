@@ -3,57 +3,43 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"satset2/location-service/service"
 	"strconv"
-	"time"
+
+	"satset2/location-service/domain"
+	"satset2/location-service/service"
 )
 
 type LocationHandler struct {
-	service *service.LocationService
+	locService *service.LocationService
 }
 
-func NewLocationHandler(svc *service.LocationService) *LocationHandler {
-	return &LocationHandler{service: svc}
+func NewLocationHandler(s *service.LocationService) *LocationHandler {
+	return &LocationHandler{locService: s}
 }
 
-type updateLocationRequest struct {
-	DriverID  string  `json:"driver_id"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
-}
-
-func (h *LocationHandler) Update(w http.ResponseWriter, r *http.Request) {
-	var req updateLocationRequest
+func (h *LocationHandler) UpdateLocation(w http.ResponseWriter, r *http.Request) {
+	var req domain.DriverLocation
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		respondError(w, http.StatusBadRequest, "invalid JSON body")
-		return
-	}
-	if req.DriverID == "" {
-		respondError(w, http.StatusBadRequest, "driver_id is required")
+		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	h.service.UpdateLocation(req.DriverID, req.Latitude, req.Longitude, time.Now().Unix())
-	respondJSON(w, http.StatusOK, successResponse{Message: "location updated"})
+	h.locService.UpdateDriverLocation(&req)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status": "updated"}`))
 }
 
-func (h *LocationHandler) Nearby(w http.ResponseWriter, r *http.Request) {
-	lat, err := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+func (h *LocationHandler) GetNearbyDrivers(w http.ResponseWriter, r *http.Request) {
+	lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
+	lng, _ := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
+	radius, _ := strconv.ParseFloat(r.URL.Query().Get("radius"), 64)
+
+	drivers, err := h.locService.GetNearestDrivers(lat, lng, radius)
 	if err != nil {
-		respondError(w, http.StatusBadRequest, "lat must be a float")
-		return
-	}
-	lng, err := strconv.ParseFloat(r.URL.Query().Get("lng"), 64)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "lng must be a float")
-		return
-	}
-	radius, err := strconv.ParseFloat(r.URL.Query().Get("radius"), 64)
-	if err != nil {
-		respondError(w, http.StatusBadRequest, "radius must be a float")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	drivers := h.service.GetNearbyDrivers(lat, lng, radius)
-	respondJSON(w, http.StatusOK, drivers)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(drivers)
 }

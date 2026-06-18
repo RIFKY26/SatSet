@@ -3,59 +3,52 @@ package service
 import (
 	"math"
 	"satset2/location-service/domain"
-	"sync"
+	"sort"
 )
 
 type LocationService struct {
-	mu           sync.RWMutex
-	locations    map[string]domain.Location
-	driverClient domain.DriverClient // Menggunakan interface dari domain
+	repo domain.LocationRepository
 }
 
-func NewLocationService(dc domain.DriverClient) *LocationService {
-	return &LocationService{
-		locations:    make(map[string]domain.Location),
-		driverClient: dc,
+func NewLocationService(repo domain.LocationRepository) *LocationService {
+	return &LocationService{repo: repo}
+}
+
+func (s *LocationService) UpdateDriverLocation(loc *domain.DriverLocation) error {
+	return s.repo.UpdateLocation(loc)
+}
+
+// Struct untuk mengembalikan hasil pencarian
+type DriverDistance struct {
+	DriverID string  `json:"driver_id"`
+	Distance float64 `json:"distance"`
+}
+
+func (s *LocationService) GetNearestDrivers(lat, lng float64, radius float64) ([]DriverDistance, error) {
+	allLocs, err := s.repo.GetAllLocations()
+	if err != nil {
+		return nil, err
 	}
-}
 
-func (s *LocationService) UpdateLocation(driverID string, lat, lng float64, timestamp int64) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.locations[driverID] = domain.Location{
-		DriverID:  driverID,
-		Latitude:  lat,
-		Longitude: lng,
-		Timestamp: timestamp,
-	}
-}
+	var results []DriverDistance
+	for _, loc := range allLocs {
+		// Rumus Pythagoras sederhana untuk simulasi jarak koordinat
+		latDiff := loc.Latitude - lat
+		lngDiff := loc.Longitude - lng
+		distance := math.Sqrt((latDiff*latDiff)+(lngDiff*lngDiff)) * 111 // Konversi kasar ke KM
 
-func (s *LocationService) GetNearbyDrivers(lat, lng, radius float64) []domain.DriverDistance {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	results := []domain.DriverDistance{}
-
-	for driverID, loc := range s.locations {
-		// Panggil interface untuk cek apakah driver AVAILABLE
-		available, err := s.driverClient.IsDriverAvailable(driverID)
-		if err != nil || !available {
-			continue
-		}
-
-		dist := euclideanDistance(lat, lng, loc.Latitude, loc.Longitude)
-		if dist <= radius {
-			results = append(results, domain.DriverDistance{
-				DriverID: driverID,
-				Distance: dist,
+		if distance <= radius {
+			results = append(results, DriverDistance{
+				DriverID: loc.DriverID,
+				Distance: distance,
 			})
 		}
 	}
-	return results
-}
 
-func euclideanDistance(lat1, lng1, lat2, lng2 float64) float64 {
-	dlat := lat1 - lat2
-	dlng := lng1 - lng2
-	return math.Sqrt(dlat*dlat + dlng*dlng)
+	// Urutkan dari yang paling dekat
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Distance < results[j].Distance
+	})
+
+	return results, nil
 }

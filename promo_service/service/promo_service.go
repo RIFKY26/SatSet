@@ -1,60 +1,42 @@
 package service
 
 import (
-	"fmt"
-	"satset2/promo-service/domain"
-	"time"
+	"errors"
+	"satset2/promo_service/domain"
 )
 
-type promoService struct {
+type PromoService struct {
 	repo domain.PromoRepository
 }
 
-func NewPromoService(r domain.PromoRepository) domain.PromoService {
-	return &promoService{repo: r}
+func NewPromoService(repo domain.PromoRepository) *PromoService {
+	return &PromoService{repo: repo}
 }
 
-func (s *promoService) ApplyPromo(code, userID string, orderValue float64, serviceType string) (*domain.PromoOutput, error) {
+func (s *PromoService) ApplyPromo(code string, orderValue float64) (float64, error) {
+	// 1. Cari promo di database
 	promo, err := s.repo.FindByCode(code)
 	if err != nil {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: "Promo code not found"}, nil
+		return 0, errors.New("kode promo tidak ditemukan atau tidak valid")
 	}
 
-	// 1. Validasi Masa Berlaku [cite: 114]
-	if time.Now().After(promo.ExpiryDate) {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: "Promo has expired"}, nil
+	// 2. Cek validasi kuota dan syarat minimum
+	if promo.Quota <= 0 {
+		return 0, errors.New("maaf, kuota promo ini sudah habis")
 	}
-
-	// 2. Validasi Kuota Umum [cite: 118]
-	if promo.QuotaRemaining <= 0 {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: "Promo quota is full"}, nil
-	}
-
-	// 3. Validasi Tipe Layanan
-	if promo.ServiceType != serviceType {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: fmt.Sprintf("Promo only valid for %s", promo.ServiceType)}, nil
-	}
-
-	// 4. Validasi Minimal Belanja
 	if orderValue < promo.MinOrderValue {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: "Minimum order value not met"}, nil
+		return 0, errors.New("minimum transaksi tidak terpenuhi untuk promo ini")
 	}
 
-	// 5. Validasi Penggunaan Per User
-	usageCount, _ := s.repo.GetUserUsageCount(promo.PromoID, userID)
-	if usageCount >= 1 {
-		return &domain.PromoOutput{IsValid: false, ErrorMessage: "You have already used this promo"}, nil
-	}
-
-	// Perhitungan Diskon
-	discount := orderValue * (promo.DiscountPercent / 100)
+	// 3. Hitung diskon
+	discount := orderValue * (promo.DiscountPct / 100)
 	if discount > promo.MaxDiscount {
 		discount = promo.MaxDiscount
 	}
 
-	return &domain.PromoOutput{
-		IsValid:        true,
-		DiscountAmount: discount,
-		FinalPrice:     orderValue - discount,
-	}, nil
+	// 4. Kurangi kuota promo di database agar tidak dipakai terus-terusan
+	promo.Quota -= 1
+	s.repo.UpdateQuota(promo)
+
+	return discount, nil
 }

@@ -1,11 +1,16 @@
 package domain
 
-// Kontrak untuk nembak API luar (Firebase/SMS)
-type NotificationProvider interface {
-	Send(userID string, message string) error
+import "time"
+
+type Notification struct {
+	ID        int       `json:"id" gorm:"primaryKey;autoIncrement"`
+	UserID    int       `json:"user_id"`
+	Title     string    `json:"title"`
+	Message   string    `json:"message"`
+	IsRead    bool      `json:"is_read"` // Tandai apakah notif sudah dibaca
+	CreatedAt time.Time `json:"created_at"`
 }
 
-// Kontrak untuk nembak Database (Postgres/Mongo)
 type NotificationRepository interface {
-	SaveLog(userID string, status string) error
+	Save(notification *Notification) error
 }

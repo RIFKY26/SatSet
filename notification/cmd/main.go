@@ -4,26 +4,38 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"satset2/notification/domain"
 	"satset2/notification/handler"
+	"satset2/notification/repository"
 	"satset2/notification/service"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	fmt.Println("Menjalankan SatSet - Notification Service")
+	dsn := "host=localhost user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Gagal connect ke database: %v", err)
+	}
 
-	// Setup dummy untuk main
-	svc := service.NewNotificationService(nil)
-	h := handler.NewNotificationHandler(svc)
+	err = db.AutoMigrate(&domain.Notification{})
+	if err != nil {
+		log.Fatalf("Gagal migrasi database: %v", err)
+	}
 
-	_ = h // Biar tidak error "declared but not used"
+	repo := repository.NewSqlNotificationRepository(db)
+	notifSvc := service.NewNotificationService(repo)
+	notifHandler := handler.NewNotificationHandler(notifSvc)
 
-	// Endpoint /health untuk pengecekan otomatis dari Kubernetes nanti
+	http.HandleFunc("/notifications/send", notifHandler.SendNotificationHandler)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	// Menjalankan server di port 8088
-	fmt.Println("Notification Service berjalan di port 8088...")
-	log.Fatal(http.ListenAndServe(":8088", nil))
+	fmt.Println("Notification Service berhasil terhubung ke PostgreSQL dan berjalan di port 8089...")
+	log.Fatal(http.ListenAndServe(":8089", nil))
 }

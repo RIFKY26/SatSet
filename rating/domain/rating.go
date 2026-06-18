@@ -1,6 +1,13 @@
 package domain
 
-// Kontrak untuk nembak Database (Postgres/Mongo)
+type Rating struct {
+	ID       int    `json:"id" gorm:"primaryKey;autoIncrement"`
+	OrderID  string `json:"order_id"`
+	DriverID string `json:"driver_id"`
+	Score    int    `json:"score"`
+	Feedback string `json:"feedback"`
+}
+
 type RatingRepository interface {
-	SaveRating(orderID string, driverID string, score int) error
+	SaveRating(rating *Rating) error
 }

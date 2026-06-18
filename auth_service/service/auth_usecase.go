@@ -5,13 +5,12 @@ import (
 	"errors"
 )
 
-// Buat interface agar mudah di-inject ke handler
 type AuthService interface {
 	Login(email, password string) (string, error)
 }
 
 type authService struct {
-	userRepo repository.AuthRepository // Ubah dari UserRepository jadi AuthRepository
+	userRepo repository.AuthRepository
 }
 
 func NewAuthService(repo repository.AuthRepository) AuthService {
@@ -19,14 +18,16 @@ func NewAuthService(repo repository.AuthRepository) AuthService {
 }
 
 func (s *authService) Login(email, password string) (string, error) {
+	// 1. Cari user di Database asli
 	user, err := s.userRepo.GetByEmail(email)
 	if err != nil {
-		return "", err
+		return "", errors.New("email tidak terdaftar")
 	}
 
-	if user != nil && user.Email == "test@satset.com" {
-		return "token-dummy", nil
+	// 2. Cek password (Di production pakai bcrypt, untuk tugas ini string biasa dulu)
+	if user.Password == password {
+		return "token-jwt-asli-nanti-disini", nil
 	}
 
-	return "", errors.New("invalid credentials")
+	return "", errors.New("password salah")
 }

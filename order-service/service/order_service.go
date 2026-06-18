@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"satset2/order-service/domain" // Import struktur data dari domain
+	"satset2/order-service/domain"
 )
 
-// CreateOrder memanggil struct dari package domain
 func CreateOrder(req domain.OrderRequest, repo domain.OrderRepository) (domain.OrderResponse, error) {
 	if req.UserID <= 0 {
 		return domain.OrderResponse{}, errors.New("user ID tidak valid")
@@ -17,16 +16,25 @@ func CreateOrder(req domain.OrderRequest, repo domain.OrderRepository) (domain.O
 		return domain.OrderResponse{}, errors.New("item tidak boleh kosong")
 	}
 
+	// 1. Buat ID Pesanan
 	orderID := fmt.Sprintf("ORD-%d", time.Now().UnixNano())
-	order := domain.OrderResponse{
+	
+	// 2. Siapkan data yang akan dimasukkan ke Database
+	order := domain.Order{
 		OrderID: orderID,
+		UserID:  req.UserID,
+		Item:    req.Item,
 		Status:  "CREATED",
 	}
 
-	// Simpan menggunakan repository
-	if err := repo.Save(order); err != nil {
+	// 3. Simpan ke Database asli
+	if err := repo.Save(&order); err != nil {
 		return domain.OrderResponse{}, err
 	}
 
-	return order, nil
+	// 4. Kembalikan respon ke User
+	return domain.OrderResponse{
+		OrderID: order.OrderID,
+		Status:  order.Status,
+	}, nil
 }

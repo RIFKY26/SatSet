@@ -3,40 +3,44 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"satset2/promo-service/domain"
+
+	"satset2/promo_service/service"
 )
 
 type PromoHandler struct {
-	service domain.PromoService
+	promoService *service.PromoService
 }
 
-func NewPromoHandler(s domain.PromoService) *PromoHandler {
-	return &PromoHandler{service: s}
+func NewPromoHandler(s *service.PromoService) *PromoHandler {
+	return &PromoHandler{promoService: s}
 }
 
-func (h *PromoHandler) HandleApplyPromo(w http.ResponseWriter, r *http.Request) {
+func (h *PromoHandler) ApplyPromoHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var req domain.PromoRequest
+	var req struct {
+		Code       string  `json:"promo_code"`
+		OrderValue float64 `json:"order_value"`
+	}
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		http.Error(w, "Bad request", http.StatusBadRequest)
 		return
 	}
 
-	result, err := h.service.ApplyPromo(req.PromoCode, req.UserID, req.OrderValue, req.ServiceType)
+	discount, err := h.promoService.ApplyPromo(req.Code, req.OrderValue)
 	if err != nil {
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if !result.IsValid {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-	} else {
-		w.WriteHeader(http.StatusOK)
-	}
-	json.NewEncoder(w).Encode(result)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"promo_code": req.Code,
+		"discount":   discount,
+		"status":     "applied",
+	})
 }

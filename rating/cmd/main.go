@@ -4,27 +4,39 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"satset2/rating/domain"
 	"satset2/rating/handler"
 	"satset2/rating/repository"
 	"satset2/rating/service"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	fmt.Println("Menjalankan SatSet - Rating Service dengan Clean Architecture")
+	dsn := "host=localhost user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Gagal connect ke database: %v", err)
+	}
 
-	repo := repository.NewRatingRepository()
-	svc := service.NewRatingService(repo)
-	h := handler.NewRatingHandler(svc)
+	// AutoMigrate untuk membuat tabel ratings otomatis
+	err = db.AutoMigrate(&domain.Rating{})
+	if err != nil {
+		log.Fatalf("Gagal migrasi database: %v", err)
+	}
 
-	_ = h // Biar variabel h tidak error 'declared but not used' jika belum ada route-nya
+	repo := repository.NewSqlRatingRepository(db)
+	ratingSvc := service.NewRatingService(repo)
+	ratingHandler := handler.NewRatingHandler(ratingSvc)
 
-	// Endpoint /health untuk pengecekan otomatis dari Kubernetes nanti
+	http.HandleFunc("/ratings", ratingHandler.SubmitRatingHandler)
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	// Menjalankan server di port 8087
-	fmt.Println("Rating Service berjalan di port 8087...")
-	log.Fatal(http.ListenAndServe(":8087", nil))
+	fmt.Println("Rating Service berhasil terhubung ke PostgreSQL dan berjalan di port 8088...")
+	log.Fatal(http.ListenAndServe(":8088", nil))
 }

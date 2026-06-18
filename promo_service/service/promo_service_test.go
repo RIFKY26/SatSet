@@ -1,14 +1,14 @@
 package service
 
 import (
-	"satset2/promo-service/domain"
+	"satset2/promo_service/domain"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
+// 1. Buat Mock Repository Baru
 type MockPromoRepo struct {
 	mock.Mock
 }
@@ -21,29 +21,37 @@ func (m *MockPromoRepo) FindByCode(code string) (*domain.Promo, error) {
 	return args.Get(0).(*domain.Promo), args.Error(1)
 }
 
-func (m *MockPromoRepo) GetUserUsageCount(pID, uID string) (int, error) {
-	args := m.Called(pID, uID)
-	return args.Int(0), args.Error(1)
+func (m *MockPromoRepo) UpdateQuota(promo *domain.Promo) error {
+	args := m.Called(promo)
+	return args.Error(0)
 }
-func (m *MockPromoRepo) UpdateQuota(id string, amt int) error     { return nil }
-func (m *MockPromoRepo) RecordUsage(h *domain.UsageHistory) error { return nil }
 
+// 2. Test Skenario Sukses
 func TestApplyPromoSuccess(t *testing.T) {
 	mockRepo := new(MockPromoRepo)
-	now := time.Now().Add(24 * time.Hour)
 
+	// Data promo bohongan untuk di-test
 	dummyPromo := &domain.Promo{
-		PromoID: "P1", PromoCode: "HEMAT", MinOrderValue: 10000,
-		MaxDiscount: 5000, DiscountPercent: 50, QuotaRemaining: 10,
-		ExpiryDate: now, ServiceType: "motor",
+		PromoID:       "P-001",
+		PromoCode:     "SATSET50",
+		MinOrderValue: 20000,
+		MaxDiscount:   15000,
+		DiscountPct:   50,
+		Quota:         10,
 	}
-	mockRepo.On("FindByCode", "HEMAT").Return(dummyPromo, nil)
-	mockRepo.On("GetUserUsageCount", "P1", "USER1").Return(0, nil)
 
+	// Atur agar mock mengembalikan dummyPromo
+	mockRepo.On("FindByCode", "SATSET50").Return(dummyPromo, nil)
+	mockRepo.On("UpdateQuota", dummyPromo).Return(nil)
+
+	// Jalankan service-nya
 	svc := NewPromoService(mockRepo)
-	res, _ := svc.ApplyPromo("HEMAT", "USER1", 20000, "motor")
 
-	assert.True(t, res.IsValid)
-	assert.Equal(t, float64(5000), res.DiscountAmount)
-	assert.Equal(t, float64(15000), res.FinalPrice)
+	// Kita tes beli seharga Rp 40.000
+	discount, err := svc.ApplyPromo("SATSET50", 40000)
+
+	// Validasi hasil
+	assert.NoError(t, err)
+	// Diskon 50% dari 40.000 adalah 20.000, tapi karena MaxDiscount 15.000, maka hasil harus 15.000
+	assert.Equal(t, float64(15000), discount)
 }

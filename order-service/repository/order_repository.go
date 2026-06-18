@@ -1,14 +1,19 @@
 package repository
 
 import (
-	"satset2/order-service/domain" // Import struktur data dari domain
+	"satset2/order-service/domain"
+	"gorm.io/gorm"
 )
 
-// DefaultOrderRepository adalah implementasi konkrit
-type DefaultOrderRepository struct{}
+type SqlOrderRepository struct {
+	DB *gorm.DB
+}
 
-// Fungsi Save sekarang menerima domain.OrderResponse
-func (r DefaultOrderRepository) Save(order domain.OrderResponse) error {
-	// Simulasi simpan ke database
-	return nil
+func NewSqlOrderRepository(db *gorm.DB) domain.OrderRepository {
+	return &SqlOrderRepository{DB: db}
+}
+
+// Fungsi Save sekarang menembak langsung ke PostgreSQL
+func (r *SqlOrderRepository) Save(order *domain.Order) error {
+	return r.DB.Create(order).Error
 }

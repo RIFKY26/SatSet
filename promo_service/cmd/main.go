@@ -1,39 +1,57 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"satset2/promo-service/handler"
-	"satset2/promo-service/repository"
-	"satset2/promo-service/service"
-	"time"
+
+	"satset2/promo_service/domain"
+	"satset2/promo_service/handler"
+	"satset2/promo_service/repository"
+	"satset2/promo_service/service"
+
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
-	// Perakitan Komponen (Dependency Injection)
-	repo := repository.NewPromoRepository()
-	promoSvc := service.NewPromoService(repo)
-	promoHandler := handler.NewPromoHandler(promoSvc)
+	dsn := "host=localhost user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Gagal connect ke database: %v", err)
+	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/promo/apply", promoHandler.HandleApplyPromo)
+	// 1. Buat tabel promos
+	err = db.AutoMigrate(&domain.Promo{})
+	if err != nil {
+		log.Fatalf("Gagal migrasi database: %v", err)
+	}
 
-	// TAMBAHAN WAJIB: Endpoint health agar Kubernetes bisa mengecek status Promo Service
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	// 2. Seeding (Suntik promo otomatis untuk presentasi)
+	var count int64
+	db.Model(&domain.Promo{}).Where("promo_code = ?", "SATSET50").Count(&count)
+	if count == 0 {
+		db.Create(&domain.Promo{
+			PromoID:       "P-001",
+			PromoCode:     "SATSET50",
+			MinOrderValue: 20000,
+			MaxDiscount:   15000,
+			DiscountPct:   50,
+			Quota:         100,
+		})
+		fmt.Println("Promo 'SATSET50' berhasil disuntikkan ke database!")
+	}
+
+	repo := repository.NewSqlPromoRepository(db)
+	promoService := service.NewPromoService(repo)
+	promoHandler := handler.NewPromoHandler(promoService)
+
+	http.HandleFunc("/promos/apply", promoHandler.ApplyPromoHandler)
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	server := &http.Server{
-		Addr:         ":8086",
-		Handler:      mux,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
-	}
-
-	log.Println("Promo Service starting on :8086...")
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("Server failed to start: %v", err)
-	}
+	fmt.Println("Promo Service berhasil terhubung ke PostgreSQL dan berjalan di port 8087...")
+	log.Fatal(http.ListenAndServe(":8087", nil))
 }

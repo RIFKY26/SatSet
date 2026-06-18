@@ -1,23 +1,29 @@
 package repository
 
-import "satset2/payment-service/domain"
+import (
+	"satset2/payment-service/domain"
 
-type paymentRepository struct {
-	// Nanti koneksi db (seperti gorm.DB atau *sql.DB) ditaruh di sini
+	"gorm.io/gorm"
+)
+
+type SqlPaymentRepository struct {
+	DB *gorm.DB
 }
 
-func NewPaymentRepository() domain.PaymentRepository {
-	return &paymentRepository{}
+func NewSqlPaymentRepository(db *gorm.DB) domain.PaymentRepository {
+	return &SqlPaymentRepository{DB: db}
 }
 
-// 1. Memenuhi janji method CreateTransaction
-func (r *paymentRepository) CreateTransaction(tx *domain.Transaction) error {
-	// Simulasi seolah-olah sukses menyimpan ke database
-	return nil
+func (r *SqlPaymentRepository) CreateTransaction(tx *domain.Transaction) error {
+	return r.DB.Create(tx).Error
 }
 
-// 2. Memenuhi janji method FindByIdempotencyKey
-func (r *paymentRepository) FindByIdempotencyKey(key string) (*domain.Transaction, error) {
-	// Simulasi seolah-olah belum ada transaksi dengan key ini (tidak duplikat)
-	return nil, nil
+func (r *SqlPaymentRepository) FindByIdempotencyKey(key string) (*domain.Transaction, error) {
+	var tx domain.Transaction
+	// Cari apakah kode pembayaran ini sudah pernah sukses sebelumnya
+	err := r.DB.Where("idempotency_key = ?", key).First(&tx).Error
+	if err != nil {
+		return nil, err
+	}
+	return &tx, nil
 }

@@ -1,34 +1,25 @@
 package repository
 
 import (
-	"errors"
-	"satset2/promo-service/domain"
+	"satset2/promo_service/domain"
+
+	"gorm.io/gorm"
 )
 
-type promoRepository struct {
-	// Di sini biasanya ada *sql.DB atau library database lainnya
+type SqlPromoRepository struct {
+	DB *gorm.DB
 }
 
-func NewPromoRepository() domain.PromoRepository {
-	return &promoRepository{}
+func NewSqlPromoRepository(db *gorm.DB) domain.PromoRepository {
+	return &SqlPromoRepository{DB: db}
 }
 
-func (r *promoRepository) FindByCode(code string) (*domain.Promo, error) {
-	// Logika pencarian data ke database
-	return nil, errors.New("not implemented")
+func (r *SqlPromoRepository) FindByCode(code string) (*domain.Promo, error) {
+	var promo domain.Promo
+	err := r.DB.Where("promo_code = ?", code).First(&promo).Error
+	return &promo, err
 }
 
-func (r *promoRepository) GetUserUsageCount(promoID, userID string) (int, error) {
-	// Menghitung penggunaan user
-	return 0, nil
-}
-
-func (r *promoRepository) UpdateQuota(promoID string, amount int) error {
-	// Update kuota di DB
-	return nil
-}
-
-func (r *promoRepository) RecordUsage(history *domain.UsageHistory) error {
-	// Simpan history penggunaan
-	return nil
+func (r *SqlPromoRepository) UpdateQuota(promo *domain.Promo) error {
+	return r.DB.Save(promo).Error
 }

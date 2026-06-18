@@ -1,18 +1,19 @@
 package repository
 
 import (
-	"errors"
 	"satset2/notification/domain"
+
+	"gorm.io/gorm"
 )
 
 type SqlNotificationRepository struct {
-	// Nanti diisi: db *sql.DB (koneksi database)
+	DB *gorm.DB
 }
 
-func NewNotificationRepository() domain.NotificationRepository {
-	return &SqlNotificationRepository{}
+func NewSqlNotificationRepository(db *gorm.DB) domain.NotificationRepository {
+	return &SqlNotificationRepository{DB: db}
 }
 
-func (r *SqlNotificationRepository) SaveLog(userID string, status string) error {
-	return errors.New("TDD: repository SaveLog belum diimplementasikan")
+func (r *SqlNotificationRepository) Save(notification *domain.Notification) error {
+	return r.DB.Create(notification).Error
 }

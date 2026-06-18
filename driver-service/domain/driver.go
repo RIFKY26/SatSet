@@ -11,7 +11,14 @@ const (
 )
 
 type Driver struct {
-	ID                 string
-	ConnectionStatus   ConnectionStatus
-	AvailabilityStatus AvailabilityStatus
+	ID                 string             `json:"id" gorm:"primaryKey"`
+	ConnectionStatus   ConnectionStatus   `json:"connection_status"`
+	AvailabilityStatus AvailabilityStatus `json:"availability_status"`
+}
+
+// Tambahkan kontrak Repository agar strukturnya rapi (Clean Architecture)
+type DriverRepository interface {
+	Save(driver *Driver) error
+	FindByID(id string) (*Driver, error)
+	Update(driver *Driver) error
 }

@@ -8,8 +8,15 @@ import (
 	"satset2/matching-service/service"
 )
 
-// MatchDriverHandler menerima order ID dan mengembalikan driver
-func MatchDriverHandler(w http.ResponseWriter, r *http.Request) {
+type MatchHandler struct {
+	matchService *service.MatchService
+}
+
+func NewMatchHandler(s *service.MatchService) *MatchHandler {
+	return &MatchHandler{matchService: s}
+}
+
+func (h *MatchHandler) MatchDriverHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -21,9 +28,9 @@ func MatchDriverHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := service.MatchDriver(req)
+	result, err := h.matchService.MatchDriver(req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 

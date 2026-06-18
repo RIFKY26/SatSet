@@ -1,18 +1,19 @@
 package repository
 
 import (
-	"errors"
 	"satset2/rating/domain"
+
+	"gorm.io/gorm"
 )
 
 type SqlRatingRepository struct {
-	// Nanti diisi koneksi database DB
+	DB *gorm.DB
 }
 
-func NewRatingRepository() domain.RatingRepository {
-	return &SqlRatingRepository{}
+func NewSqlRatingRepository(db *gorm.DB) domain.RatingRepository {
+	return &SqlRatingRepository{DB: db}
 }
 
-func (r *SqlRatingRepository) SaveRating(orderID string, driverID string, score int) error {
-	return errors.New("TDD: repository SaveRating belum diimplementasikan")
+func (r *SqlRatingRepository) SaveRating(rating *domain.Rating) error {
+	return r.DB.Create(rating).Error
 }

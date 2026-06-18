@@ -17,8 +17,8 @@ import (
 
 func main() {
 	// 1. Data koneksi (DSN) sesuai dengan yang ada di Docker
-	dsn := "host=localhost user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
-	
+	dsn := "host=host.minikube.internal user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
+
 	// 2. Buka koneksi ke PostgreSQL
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -34,14 +34,14 @@ func main() {
 	// 4. Rakit aplikasinya (Dependency Injection)
 	repo := repository.NewSqlUserRepository(db)
 	svc := service.NewUserService(repo)
-	h := handler.NewUserHandler(svc) 
+	h := handler.NewUserHandler(svc)
 
 	// 5. Setup Router (karena handler kamu menggunakan Gin)
 	r := gin.Default()
-	
+
 	// Endpoint untuk ambil profile user
 	r.GET("/users/:id", h.GetProfile)
-	
+
 	// Endpoint Health untuk mengecek Kubernetes nanti
 	r.GET("/health", func(c *gin.Context) {
 		c.String(http.StatusOK, "OK")

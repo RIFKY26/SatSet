@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// 1. DSN Koneksi ke Docker PostgreSQL
-	dsn := "host=localhost user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
+	dsn := "host=host.minikube.internal user=admin password=rahasia dbname=satset_db port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Gagal connect ke database: %v", err)

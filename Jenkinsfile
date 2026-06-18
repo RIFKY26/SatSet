@@ -17,7 +17,7 @@ pipeline {
 
         stage('Persiapan: Login Docker Hub') {
             steps {
-                bat 'echo "$DOCKER_CREDS_PSW" | docker login -u "$DOCKER_CREDS_USR" --password-stdin'
+                bat 'echo "%DOCKER_CREDS_PSW" | docker login -u "%DOCKER_CREDS_USR" --password-stdin'
             }
         }
 
@@ -32,10 +32,10 @@ pipeline {
 
                     for (int i = 0; i < services.size(); i++) {
                         def svc = services[i]
-                        def imageName = "${DOCKER_USER}/satset-${svc.replace('_', '-')}:latest"
+                        def imageName = "%{DOCKER_USER}/satset-%{svc.replace('_', '-')}:latest"
 
                         echo "=================================================="
-                        echo "MEMPROSES SERVICE: ${svc.toUpperCase()}"
+                        echo "MEMPROSES SERVICE: %{svc.toUpperCase()}"
                         echo "=================================================="
 
                         dir(svc) {
@@ -50,7 +50,7 @@ pipeline {
 
                             // 4. Build Image (lokal)
                             echo "--> Merakit Docker Image..."
-                            bat "docker build -t ${imageName} ."
+                            bat "docker build -t %{imageName} ."
 
                             // 5. Functional Tests
                             echo "--> Menjalankan Functional Tests..."
@@ -59,7 +59,7 @@ pipeline {
 
                             // 6. Pubat image
                             echo "--> Mengunggah ke Docker Hub..."
-                            bat "docker pubat ${imageName}"
+                            bat "docker pubat %{imageName}"
                         }
                     }
                 }

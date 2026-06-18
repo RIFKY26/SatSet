@@ -17,11 +17,11 @@ pipeline {
 
         stage('Persiapan: Login Docker Hub') {
             steps {
-                bat 'echo "%DOCKER_CREDS_PSW" | docker login -u "%DOCKER_CREDS_USR" --password-stdin'
+                sh 'echo "$DOCKER_CREDS_PSW" | docker login -u "$DOCKER_CREDS_USR" --password-stdin'
             }
         }
 
-        stage('Proses Microservices (Unit Test -> Vet -> Build -> Func Test -> Pubat)') {
+        stage('Proses Microservices (Unit Test -> Vet -> Build -> Func Test -> Push)') {
             steps {
                 script {
                     def services = [
@@ -32,34 +32,34 @@ pipeline {
 
                     for (int i = 0; i < services.size(); i++) {
                         def svc = services[i]
-                        def imageName = "%{DOCKER_USER}/satset-%{svc.replace('_', '-')}:latest"
+                        def imageName = "${DOCKER_USER}/satset-${svc.replace('_', '-')}:latest"
 
                         echo "=================================================="
-                        echo "MEMPROSES SERVICE: %{svc.toUpperCase()}"
+                        echo "MEMPROSES SERVICE: ${svc.toUpperCase()}"
                         echo "=================================================="
 
                         dir(svc) {
                             // 2. Unit Tests
                             echo "--> Menjalankan Unit Tests..."
                             // Menggunakan returnStatus: true karena dosen bilang test akan failed
-                            bat returnStatus: true, script: 'go test -v ./...'
+                            sh returnStatus: true, script: 'go test -v ./...'
 
                             // 3. Lint/Vet
                             echo "--> Menjalankan Lint/Vet..."
-                            bat returnStatus: true, script: 'go vet ./...'
+                            sh returnStatus: true, script: 'go vet ./...'
 
                             // 4. Build Image (lokal)
                             echo "--> Merakit Docker Image..."
-                            bat "docker build -t %{imageName} ."
+                            sh "docker build -t ${imageName} ."
 
                             // 5. Functional Tests
                             echo "--> Menjalankan Functional Tests..."
                             // Simulasi pemanggilan functional test
-                            bat returnStatus: true, script: 'go test -v ./... -tags=functional'
+                            sh returnStatus: true, script: 'go test -v ./... -tags=functional'
 
-                            // 6. Pubat image
+                            // 6. Push image
                             echo "--> Mengunggah ke Docker Hub..."
-                            bat "docker pubat %{imageName}"
+                            sh "docker push ${imageName}"
                         }
                     }
                 }
@@ -69,7 +69,7 @@ pipeline {
         stage('7. Deploy di kubernetes') {
             steps {
                 echo "Menerapkan konfigurasi Kubernetes..."
-                bat returnStatus: true, script: '''
+                sh returnStatus: true, script: '''
                     kubectl apply -f ./auth_service/auth-k8s.yaml
                     kubectl apply -f ./driver-service/driver-k8s.yaml
                     kubectl apply -f ./location-service/location-k8s.yaml
@@ -87,7 +87,7 @@ pipeline {
             steps {
                 echo "Memverifikasi Pods yang berjalan di Kubernetes..."
                 // Menjalankan get pods langsung di dalam Jenkins sesuai permintaan dosen
-                bat 'kubectl get pods'
+                sh 'kubectl get pods'
             }
         }
     }
@@ -95,7 +95,7 @@ pipeline {
     post {
         always {
             echo "Pipeline SatSet selesai dieksekusi!"
-            bat returnStatus: true, script: 'docker system prune -f'
+            sh returnStatus: true, script: 'docker system prune -f'
         }
     }
 }

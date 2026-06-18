@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// 1. Siapkan kabel untuk menelepon location-service di port 8083
-	locClient := client.NewLocationHTTPClient("http://localhost:8083")
+	locClient := client.NewLocationHTTPClient("http://location-service:80")
 
 	// 2. Dependency Injection
 	matchSvc := service.NewMatchService(locClient)
